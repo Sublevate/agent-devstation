@@ -37,7 +37,7 @@ This enables the browser editor and Codex's Linux sandbox so you can use **eithe
    ```yaml
    services:
      agent-devstation:
-       image: ghcr.io/lucurlings/agent-devstation:latest
+       image: ghcr.io/sublevate/agent-devstation:latest
        hostname: agent-devspace
        container_name: agent-devspace
        pull_policy: always
@@ -140,4 +140,4 @@ The linked Compose file leaves the editor off. To enable it there, set `AGENT_DE
 
 Original project code is [Apache 2.0 licensed](LICENSE). See [Contributing](CONTRIBUTING.md), [Security](SECURITY.md), the [Code of Conduct](CODE_OF_CONDUCT.md), and [repository settings](docs/repository-settings.md).
 
-<a href="https://www.star-history.com/?repos=LucUrlings%2Fagent-devstation&type=date"><img alt="Agent Devstation star history" src="https://api.star-history.com/chart?repos=LucUrlings/agent-devstation&type=date" /></a>
+<a href="https://www.star-history.com/?repos=Sublevate%2Fagent-devstation&type=date"><img alt="Agent Devstation star history" src="https://api.star-history.com/chart?repos=Sublevate/agent-devstation&type=date" /></a>

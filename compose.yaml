@@ -1,6 +1,6 @@
 services:
   agent-devstation:
-    image: ghcr.io/lucurlings/agent-devstation:${AGENT_DEVSTATION_TAG:-latest}
+    image: ghcr.io/sublevate/agent-devstation:${AGENT_DEVSTATION_TAG:-latest}
     hostname: agent-devspace
     container_name: agent-devspace
     pull_policy: always
