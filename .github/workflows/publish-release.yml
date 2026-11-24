@@ -20,12 +20,12 @@ concurrency:
   queue: max
 
 env:
-  IMAGE: ghcr.io/lucurlings/agent-devstation
+  IMAGE: ghcr.io/sublevate/agent-devstation
 
 jobs:
   release:
     if: >-
-      github.repository == 'LucUrlings/agent-devstation' &&
+      github.repository == 'Sublevate/agent-devstation' &&
       ((github.event_name == 'release' && !github.event.release.prerelease) ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
     runs-on: ubuntu-26.04

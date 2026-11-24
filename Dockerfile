@@ -1,6 +1,6 @@
 FROM ubuntu:26.04
 
-LABEL org.opencontainers.image.source="https://github.com/LucUrlings/agent-devstation"
+LABEL org.opencontainers.image.source="https://github.com/Sublevate/agent-devstation"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     HOME=/home/dev \
