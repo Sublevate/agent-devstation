@@ -65,6 +65,16 @@ docker buildx version
 docker info
 ```
 
+### FFmpeg
+
+Set `AGENT_DEVSTATION_FFMPEG_ENABLED=true` in Compose to install Ubuntu's FFmpeg package at startup. It provides both `ffmpeg` and `ffprobe`. Startup verifies the installation by encoding and inspecting an MP4 file with H.264 video through `libx264` and AAC audio, so a container does not become ready with an incompatible installation.
+
+This option defaults to false and does not add FFmpeg to the published image. A normal restart reuses the installed package; recreating the container downloads it again. Disabling the option removes the `ffmpeg` package, while libraries that APT installed as dependencies remain until the disposable container is recreated. Startup resumes pending package configuration before installing or removing FFmpeg. Ubuntu supplies the package for every architecture supported by Agent Devstation and provides updates through its normal package repositories.
+
+Shared Playwright Chromium continues to download and use its own limited FFmpeg helper for browser recording when `AGENT_DEVSTATION_FFMPEG_ENABLED=false`. That private executable stays under `/opt/playwright-browsers`, is not on `PATH`, does not include `ffprobe`, and is not a general replacement for the full package. It is downloaded only when shared Playwright Chromium is enabled. Enabling full FFmpeg leaves the Playwright-managed helper intact because Playwright expects its matching browser tool revision.
+
+FFmpeg is available to processes inside Agent Devstation. Containers launched through DinD have their own filesystems and must include FFmpeg in their own images when they need it.
+
 ### Playwright Chromium
 
 Set `AGENT_DEVSTATION_PLAYWRIGHT_CHROMIUM_ENABLED=true` and select `AGENT_DEVSTATION_SDK_NODE=24` (or another supported Node release) in Compose. Startup downloads Chromium and its Ubuntu browser dependencies into the disposable container layer. A normal restart reuses the browser; a container recreation downloads it again. Disabling the option removes the browser, while any system dependencies already installed remain until the container is recreated.

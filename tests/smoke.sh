@@ -116,7 +116,7 @@ sleep 3
 docker exec -u dev "$name" bash -lc 'codex --version && claude --version && gh --version && ! command -v code-server'
 # Optional tools are absent unless selected.
 docker exec -u dev "$name" bash -lc \
-  '! command -v docker && ! command -v dockerd && test -L /opt/playwright-browsers && test -w "$PLAYWRIGHT_BROWSERS_PATH" && touch "$PLAYWRIGHT_BROWSERS_PATH/project-cache-probe"'
+  '! command -v docker && ! command -v dockerd && ! command -v ffmpeg && ! command -v ffprobe && test -L /opt/playwright-browsers && test -w "$PLAYWRIGHT_BROWSERS_PATH" && touch "$PLAYWRIGHT_BROWSERS_PATH/project-cache-probe"'
 docker exec -u root "$name" /usr/local/lib/agent-devstation/install-playwright-browser.sh
 docker exec -u dev "$name" test -f /home/dev/.cache/ms-playwright/project-cache-probe
 docker exec -u dev "$name" bash -lc '
@@ -276,6 +276,7 @@ docker exec -u dev "$name" bash -lc 'for sdk in python python3 pip3 node npm npx
 docker run -d --name "$optional_name" --shm-size=1g \
   -e AGENT_DEVSTATION_SDK_NODE=26 \
   -e AGENT_DEVSTATION_DOCKER_CLI_ENABLED=true \
+  -e AGENT_DEVSTATION_FFMPEG_ENABLED=true \
   -e AGENT_DEVSTATION_PLAYWRIGHT_CHROMIUM_ENABLED=true \
   "$image" >/dev/null
 optional_ready=false
@@ -289,12 +290,13 @@ wait_for_writable_node "$optional_name"
 docker exec -u dev "$optional_name" bash -lc \
   'node --version | grep -q "^v26\." && test -f /opt/sdk/node/.agent-devstation-complete'
 docker exec -u dev "$optional_name" bash -lc \
-  'docker --version && docker compose version && docker buildx version && test "$PLAYWRIGHT_BROWSERS_PATH" = /opt/playwright-browsers && ! command -v playwright && ! command -v playwright-core'
+  'docker --version && docker compose version && docker buildx version && ffmpeg -version && ffprobe -version && find /opt/playwright-browsers -type f -name ffmpeg-linux -executable -print -quit | grep -q . && test "$PLAYWRIGHT_BROWSERS_PATH" = /opt/playwright-browsers && ! command -v playwright && ! command -v playwright-core'
+docker exec -i -u dev "$optional_name" bash -s < tests/ffmpeg-functional.sh
 docker exec -i -u dev "$optional_name" bash -s < tests/playwright-functional.sh
 
 # A restart reuses complete installations and clears interrupted downloads.
 docker exec -u root "$optional_name" mkdir -p /opt/.agent-devstation-docker-cli-staging /opt/.agent-devstation-playwright-staging
-before=$(docker logs "$optional_name" 2>&1 | grep -c '^Installing \(node\|Docker CLI\|Playwright Chromium\) ')
+before=$(docker logs "$optional_name" 2>&1 | grep -c '^Installing \(node\|Docker CLI\|FFmpeg\|Playwright Chromium\) ')
 docker restart "$optional_name" >/dev/null
 reused=false
 for _ in $(seq 1 60); do
@@ -303,9 +305,10 @@ for _ in $(seq 1 60); do
   sleep 2
 done
 [[ "$reused" == true ]] || { docker logs "$optional_name"; exit 1; }
-after=$(docker logs "$optional_name" 2>&1 | grep -c '^Installing \(node\|Docker CLI\|Playwright Chromium\) ')
+after=$(docker logs "$optional_name" 2>&1 | grep -c '^Installing \(node\|Docker CLI\|FFmpeg\|Playwright Chromium\) ')
 [[ "$before" == "$after" ]] || { echo 'Restart downloaded Node or optional tools again' >&2; exit 1; }
 docker logs "$optional_name" 2>&1 | grep '^Found node 26\..*; already installed$' >/dev/null
+docker logs "$optional_name" 2>&1 | grep '^Found FFmpeg .* with H.264/AAC MP4 support; already installed$' >/dev/null
 docker exec -u dev "$optional_name" bash -lc \
   'test ! -e /opt/.agent-devstation-docker-cli-staging && test ! -e /opt/.agent-devstation-playwright-staging'
 
@@ -334,9 +337,19 @@ docker exec -u root "$optional_name" bash -lc '
   test ! -e /var/lib/dpkg/updates/0000
 '
 docker exec -i -u dev "$optional_name" bash -s < tests/playwright-functional.sh
+docker exec -u root "$optional_name" mv /usr/bin/ffmpeg /usr/bin/ffmpeg.incomplete
+docker exec -u root "$optional_name" /usr/local/lib/agent-devstation/install-ffmpeg.sh
+docker exec -i -u dev "$optional_name" bash -s < tests/ffmpeg-functional.sh
 docker exec -u dev "$optional_name" bash -lc \
   'mkdir -p /home/dev/.cache/ms-playwright && touch /home/dev/.cache/ms-playwright/project-cache-probe'
 docker exec -u root -e AGENT_DEVSTATION_DOCKER_CLI_ENABLED=false "$optional_name" /usr/local/lib/agent-devstation/install-docker-cli.sh
+# Disabling full FFmpeg must recover an interrupted dpkg journal before
+# removing the package, while leaving Playwright's private helper intact.
+docker exec -u root "$optional_name" touch /var/lib/dpkg/updates/0000
+docker exec -u root -e AGENT_DEVSTATION_FFMPEG_ENABLED=false "$optional_name" /usr/local/lib/agent-devstation/install-ffmpeg.sh
+docker exec -u root "$optional_name" test ! -e /var/lib/dpkg/updates/0000
+docker exec -u dev "$optional_name" bash -lc \
+  '! command -v ffmpeg && ! command -v ffprobe && find /opt/playwright-browsers -type f -name ffmpeg-linux -executable -print -quit | grep -q .'
 docker exec -u root -e AGENT_DEVSTATION_PLAYWRIGHT_CHROMIUM_ENABLED=false "$optional_name" /usr/local/lib/agent-devstation/install-playwright-browser.sh
 docker exec -u dev "$optional_name" bash -lc \
-  '! command -v docker && test ! -e /opt/agent-devstation-docker-cli && test -L /opt/playwright-browsers && test -w "$PLAYWRIGHT_BROWSERS_PATH" && test -f "$PLAYWRIGHT_BROWSERS_PATH/project-cache-probe" && test ! -e "$PLAYWRIGHT_BROWSERS_PATH/.agent-devstation-installer"'
+  '! command -v docker && ! command -v ffmpeg && ! command -v ffprobe && test ! -e /opt/agent-devstation-docker-cli && test -L /opt/playwright-browsers && test -w "$PLAYWRIGHT_BROWSERS_PATH" && test -f "$PLAYWRIGHT_BROWSERS_PATH/project-cache-probe" && test ! -e "$PLAYWRIGHT_BROWSERS_PATH/.agent-devstation-installer"'

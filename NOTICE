@@ -3,5 +3,5 @@ Copyright 2026 Agent Devstation contributors
 
 Original project code is licensed under the Apache License, Version 2.0.
 Codex, Claude Code, code-server, Docker CLI, Docker Compose, Docker Buildx,
-Playwright, Chromium, and optional SDKs are separate upstream software with
-their own licenses and terms.
+FFmpeg, Playwright, Chromium, and optional SDKs are separate upstream software
+with their own licenses and terms.
