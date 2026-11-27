@@ -71,6 +71,8 @@ Set `AGENT_DEVSTATION_FFMPEG_ENABLED=true` in Compose to install Ubuntu's FFmpeg
 
 This option defaults to false and does not add FFmpeg to the published image. A normal restart reuses the installed package; recreating the container downloads it again. Disabling the option removes the `ffmpeg` package, while libraries that APT installed as dependencies remain until the disposable container is recreated. Ubuntu supplies the package for every architecture supported by Agent Devstation and provides updates through its normal package repositories.
 
+Shared Playwright Chromium continues to download and use its own limited FFmpeg helper for browser recording when `AGENT_DEVSTATION_FFMPEG_ENABLED=false`. That private executable stays under `/opt/playwright-browsers`, is not on `PATH`, does not include `ffprobe`, and is not a general replacement for the full package. It is downloaded only when shared Playwright Chromium is enabled. Enabling full FFmpeg leaves the Playwright-managed helper intact because Playwright expects its matching browser tool revision.
+
 FFmpeg is available to processes inside Agent Devstation. Containers launched through DinD have their own filesystems and must include FFmpeg in their own images when they need it.
 
 ### Playwright Chromium

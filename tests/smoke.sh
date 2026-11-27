@@ -290,7 +290,7 @@ wait_for_writable_node "$optional_name"
 docker exec -u dev "$optional_name" bash -lc \
   'node --version | grep -q "^v26\." && test -f /opt/sdk/node/.agent-devstation-complete'
 docker exec -u dev "$optional_name" bash -lc \
-  'docker --version && docker compose version && docker buildx version && ffmpeg -version && ffprobe -version && test "$PLAYWRIGHT_BROWSERS_PATH" = /opt/playwright-browsers && ! command -v playwright && ! command -v playwright-core'
+  'docker --version && docker compose version && docker buildx version && ffmpeg -version && ffprobe -version && find /opt/playwright-browsers -type f -name ffmpeg-linux -executable -print -quit | grep -q . && test "$PLAYWRIGHT_BROWSERS_PATH" = /opt/playwright-browsers && ! command -v playwright && ! command -v playwright-core'
 docker exec -i -u dev "$optional_name" bash -s < tests/ffmpeg-functional.sh
 docker exec -i -u dev "$optional_name" bash -s < tests/playwright-functional.sh
 
@@ -344,6 +344,8 @@ docker exec -u dev "$optional_name" bash -lc \
   'mkdir -p /home/dev/.cache/ms-playwright && touch /home/dev/.cache/ms-playwright/project-cache-probe'
 docker exec -u root -e AGENT_DEVSTATION_DOCKER_CLI_ENABLED=false "$optional_name" /usr/local/lib/agent-devstation/install-docker-cli.sh
 docker exec -u root -e AGENT_DEVSTATION_FFMPEG_ENABLED=false "$optional_name" /usr/local/lib/agent-devstation/install-ffmpeg.sh
+docker exec -u dev "$optional_name" bash -lc \
+  '! command -v ffmpeg && ! command -v ffprobe && find /opt/playwright-browsers -type f -name ffmpeg-linux -executable -print -quit | grep -q .'
 docker exec -u root -e AGENT_DEVSTATION_PLAYWRIGHT_CHROMIUM_ENABLED=false "$optional_name" /usr/local/lib/agent-devstation/install-playwright-browser.sh
 docker exec -u dev "$optional_name" bash -lc \
   '! command -v docker && ! command -v ffmpeg && ! command -v ffprobe && test ! -e /opt/agent-devstation-docker-cli && test -L /opt/playwright-browsers && test -w "$PLAYWRIGHT_BROWSERS_PATH" && test -f "$PLAYWRIGHT_BROWSERS_PATH/project-cache-probe" && test ! -e "$PLAYWRIGHT_BROWSERS_PATH/.agent-devstation-installer"'
