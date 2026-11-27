@@ -66,7 +66,7 @@ RUN curl -fsSL https://chatgpt.com/codex/install.sh -o /tmp/install-codex.sh \
     && echo "$installed" \
     && { [ "$CODEX_VERSION" = latest ] || [ "$installed" = "codex-cli $CODEX_VERSION" ]; }
 
-COPY scripts/entrypoint.sh scripts/install-sdks.sh scripts/install-editor.sh scripts/install-docker-cli.sh scripts/install-playwright-browser.sh /usr/local/lib/agent-devstation/
+COPY scripts/entrypoint.sh scripts/install-sdks.sh scripts/install-editor.sh scripts/install-docker-cli.sh scripts/install-ffmpeg.sh scripts/install-playwright-browser.sh /usr/local/lib/agent-devstation/
 COPY scripts/codex.sh /usr/local/bin/codex
 RUN chmod 0755 /usr/local/lib/agent-devstation/*.sh /usr/local/bin/codex && chown -R dev:dev /home/dev
 
