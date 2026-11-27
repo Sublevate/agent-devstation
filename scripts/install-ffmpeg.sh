@@ -12,11 +12,24 @@ package_installed() {
   [[ "$(dpkg-query -W -f='${db:Status-Status}' ffmpeg 2>/dev/null || true)" == installed ]]
 }
 
+package_present() {
+  local status
+  status=$(dpkg-query -W -f='${db:Status-Status}' ffmpeg 2>/dev/null || true)
+  [[ -n "$status" && "$status" != not-installed && "$status" != config-files ]]
+}
+
+repair_dpkg() {
+  if ! dpkg --configure -a; then
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-broken --no-remove --no-install-recommends
+  fi
+}
+
 has_mp4_support() {
   command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null || return 1
 
   local output video_codec audio_codec status=0
-  output=$(mktemp --suffix=.mp4)
+  output=$(mktemp --suffix=.mp4) || return 1
   if ! ffmpeg -hide_banner -loglevel error \
     -f lavfi -i testsrc2=size=64x64:rate=5 \
     -f lavfi -i sine=frequency=1000:sample_rate=48000 \
@@ -36,8 +49,11 @@ has_mp4_support() {
 }
 
 if [[ "$enabled" == false ]]; then
-  if package_installed; then
+  if package_present; then
     echo 'Uninstalling FFmpeg (disabled)'
+    # An interrupted install can leave FFmpeg unpacked or dpkg's journal
+    # pending. Finish that transaction so APT can remove the package cleanly.
+    repair_dpkg
     DEBIAN_FRONTEND=noninteractive apt-get remove -y ffmpeg
     rm -rf /var/lib/apt/lists/*
   else
@@ -55,10 +71,7 @@ fi
 echo 'Installing FFmpeg with H.264/AAC MP4 support'
 # A stop during an APT operation can leave dpkg configuration unfinished.
 # Resume it before asking APT to install or repair FFmpeg.
-if ! dpkg --configure -a; then
-  apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-broken --no-remove --no-install-recommends
-fi
+repair_dpkg
 apt-get update
 if package_installed; then
   DEBIAN_FRONTEND=noninteractive apt-get install -y --reinstall --no-install-recommends ffmpeg

@@ -343,7 +343,11 @@ docker exec -i -u dev "$optional_name" bash -s < tests/ffmpeg-functional.sh
 docker exec -u dev "$optional_name" bash -lc \
   'mkdir -p /home/dev/.cache/ms-playwright && touch /home/dev/.cache/ms-playwright/project-cache-probe'
 docker exec -u root -e AGENT_DEVSTATION_DOCKER_CLI_ENABLED=false "$optional_name" /usr/local/lib/agent-devstation/install-docker-cli.sh
+# Disabling full FFmpeg must recover an interrupted dpkg journal before
+# removing the package, while leaving Playwright's private helper intact.
+docker exec -u root "$optional_name" touch /var/lib/dpkg/updates/0000
 docker exec -u root -e AGENT_DEVSTATION_FFMPEG_ENABLED=false "$optional_name" /usr/local/lib/agent-devstation/install-ffmpeg.sh
+docker exec -u root "$optional_name" test ! -e /var/lib/dpkg/updates/0000
 docker exec -u dev "$optional_name" bash -lc \
   '! command -v ffmpeg && ! command -v ffprobe && find /opt/playwright-browsers -type f -name ffmpeg-linux -executable -print -quit | grep -q .'
 docker exec -u root -e AGENT_DEVSTATION_PLAYWRIGHT_CHROMIUM_ENABLED=false "$optional_name" /usr/local/lib/agent-devstation/install-playwright-browser.sh
